@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Invito Compleanno</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #d81b60;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+
+    table {
+      margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    .admin-section {
+      border-top: 2px solid #ccc;
+      margin-top: 30px;
+      padding-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🎉 Invito di Compleanno 🎂</h2>
+
+  <div id="formSection">
+    <form id="rsvpForm">
+      <label for="name">Nome:</label>
+      <input type="text" id="name" required>
+
+      <label for="availability">Parteciperai?</label>
+      <select id="availability" required>
+        <option value="">Seleziona</option>
+        <option value="Sì">Sì</option>
+        <option value="No">No</option>
+        <option value="Forse">Forse</option>
+      </select>
+
+      <label for="intolerances">Intolleranze alimentari:</label>
+      <textarea id="intolerances" rows="3" placeholder="Nessuna, oppure specifica..."></textarea>
+
+      <button type="submit">Invia</button>
+    </form>
+  </div>
+
+  <div class="admin-section">
+    <h3>🔐 Accesso Organizzatore</h3>
+    <form id="loginForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" required>
+
+      <button type="submit">Accedi</button>
+    </form>
+
+    <div id="adminPanel" class="hidden">
+      <h3>Partecipanti</h3>
+      <table id="responsesTable">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Disponibilità</th>
+            <th>Intolleranze</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <button onclick="downloadCSV()">📥 Scarica CSV</button>
+    </div>
+  </div>
+
+  <script>
+    const rsvpForm = document.getElementById("rsvpForm");
+    const responsesTable = document.getElementById("responsesTable").querySelector("tbody");
+    const adminPanel = document.getElementById("adminPanel");
+    const loginForm = document.getElementById("loginForm");
+
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "festa123"; // <-- Cambia qui le credenziali!
+
+    // Salva i dati nel localStorage
+    rsvpForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const availability = document.getElementById("availability").value;
+      const intolerances = document.getElementById("intolerances").value.trim();
+
+      if (!name || !availability) {
+        alert("Per favore compila tutti i campi richiesti.");
+        return;
+      }
+
+      const newEntry = { name, availability, intolerances };
+      let responses = JSON.parse(localStorage.getItem("responses") || "[]");
+      responses.push(newEntry);
+      localStorage.setItem("responses", JSON.stringify(responses));
+
+      alert("Grazie per la tua risposta!");
+      rsvpForm.reset();
+    });
+
+    // Login amministratore
+    loginForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+
+      if (user === ADMIN_USER && pass === ADMIN_PASS) {
+        adminPanel.classList.remove("hidden");
+        loginForm.classList.add("hidden");
+        showResponses();
+      } else {
+        alert("Credenziali errate.");
+      }
+    });
+
+    // Mostra i dati salvati
+    function showResponses() {
+      const responses = JSON.parse(localStorage.getItem("responses") || "[]");
+      responsesTable.innerHTML = "";
+      responses.forEach(r => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${r.name}</td><td>${r.availability}</td><td>${r.intolerances}</td>`;
+        responsesTable.appendChild(row);
+      });
+    }
+
+    // Esporta CSV
+    function downloadCSV() {
+      const responses = JSON.parse(localStorage.getItem("responses") || "[]");
+      let csv = "Nome,Disponibilità,Intolleranze\n";
+      responses.forEach(r => {
+        csv += `"${r.name}","${r.availability}","${r.intolerances.replace(/"/g, '""')}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "risposte_festa.csv";
+      a.click();
+    }
+  </script>
+
+</body>
+</html>
